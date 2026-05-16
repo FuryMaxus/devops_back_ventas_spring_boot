@@ -52,8 +52,8 @@ jobs:
 
               'if [ ! \"$(docker ps -a -q -f name=mysql-db)\" ]; then docker run -d --name mysql-db --network ventas-net -p 3306:3306 -e MYSQL_DATABASE=${{ secrets.DB_NAME }} -e MYSQL_USER=${{ secrets.DB_USER }} -e MYSQL_PASSWORD=${{ secrets.DB_PASSWORD }} -e MYSQL_ROOT_PASSWORD=${{ secrets.DB_PASSWORD }} mysql:8.0; fi',
               
-              'until docker exec mysql-db mysqladmin ping -h "localhost" --silent; do echo "Esperando MySQL..."; sleep 5; done',
-              
+              'until docker exec mysql-db mysqladmin ping -h localhost --silent; do sleep 5; done',
+                            
               'docker stop backend-ms1 || true',
               'docker rm backend-ms1 || true',
               
