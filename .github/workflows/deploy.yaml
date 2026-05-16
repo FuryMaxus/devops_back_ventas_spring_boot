@@ -57,7 +57,7 @@ jobs:
               'docker stop backend-ms1 || true',
               'docker rm backend-ms1 || true',
               
-              'docker run -d --name backend-ms1 --network ventas-net -p 8081:8080 -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/${{ secrets.DB_NAME }}?useSSL=false\\&serverTimezone=UTC\\&allowPublicKeyRetrieval=true -e SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USER }} -e SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }} $REGISTRY/$REPO:latest'
+              'docker run -d --name backend-ms1 --restart unless-stopped --network ventas-net -p 8081:8080 -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/${{ secrets.DB_NAME }}?useSSL=false\\&serverTimezone=UTC\\&allowPublicKeyRetrieval=true -e SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USER }} -e SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }} $REGISTRY/$REPO:latest'
             ]")
       
           echo COMMAND_ID=$COMMAND_ID
