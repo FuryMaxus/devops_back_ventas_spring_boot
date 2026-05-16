@@ -37,15 +37,32 @@ jobs:
         run: |
           REGISTRY=${{ steps.login-ecr.outputs.registry }}
           REPO=back_ventas
-          aws ssm send-command \
+      
+          COMMAND_ID=$(aws ssm send-command \
             --instance-ids ${{ secrets.EC2_INSTANCE_ID }} \
             --document-name "AWS-RunShellScript" \
+            --query "Command.CommandId" \
+            --output text \
             --parameters commands="[
               'set -e',
               'aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $REGISTRY',
+      
               'docker pull $REGISTRY/$REPO:latest',
+      
+              'docker network create ventas-net || true',
+      
+              'if [ ! \"$(docker ps -a -q -f name=mysql-db)\" ]; then docker run -d --name mysql-db --network ventas-net -p 3306:3306 -e MYSQL_DATABASE=${{ secrets.DB_NAME }} -e MYSQL_USER=${{ secrets.DB_USER }} -e MYSQL_PASSWORD=${{ secrets.DB_PASSWORD }} -e MYSQL_ROOT_PASSWORD=${{ secrets.DB_PASSWORD }} mysql:8.0; fi',
+      
               'docker stop backend-ms1 || true',
               'docker rm backend-ms1 || true',
-              'docker network create ventas-net || true',
-              'docker run -d --name backend-ms1 --network ventas-net -p 8081:8080 $REGISTRY/$REPO:latest'
-            ]"
+      
+              'docker run -d --name backend-ms1 --network ventas-net -p 8081:8080 -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/${{ secrets.DB_NAME }}?useSSL=false\\&serverTimezone=UTC\\&allowPublicKeyRetrieval=true -e SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USER }} -e SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }} $REGISTRY/$REPO:latest'
+            ]")
+      
+          echo COMMAND_ID=$COMMAND_ID
+      
+          sleep 15
+      
+          aws ssm get-command-invocation \
+            --command-id $COMMAND_ID \
+            --instance-id ${{ secrets.EC2_INSTANCE_ID }}
