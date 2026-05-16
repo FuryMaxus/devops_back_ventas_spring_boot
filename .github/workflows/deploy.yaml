@@ -34,10 +34,9 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
 
       - name: Desplegar BD y Backend vía SSM
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPO: back_ventas
         run: |
+          REGISTRY=${{ steps.login-ecr.outputs.registry }}
+          REPO=back_ventas
           aws ssm send-command \
             --instance-ids ${{ secrets.EC2_INSTANCE_ID }} \
             --document-name "AWS-RunShellScript" \
@@ -45,9 +44,9 @@ jobs:
             --parameters '{"commands":[
               "set -e",
               "echo 1. Login en ECR...",
-              "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin '${ECR_REGISTRY}'",
+              "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin '${REGISTRY}'",
               "echo 2. Descargando imagen...",
-              "docker pull '${ECR_REGISTRY}'/'${ECR_REPO}':latest",
+              "docker pull '${REGISTRY}'/'${REPO}':latest",
               "echo 3. Configurando Red Interna...",
               "docker network create ventas-net || true",
               "echo 4. Levantando BD MySQL (si no existe)...",
@@ -55,7 +54,7 @@ jobs:
               "echo 5. Actualizando Backend...",
               "docker stop backend-ms1 || true",
               "docker rm backend-ms1 || true",
-              "docker run -d --name backend-ms1 --network ventas-net -p 8081:8081 -e SPRING_DATASOURCE_URL=\"jdbc:mysql://mysql-db:3306/${{ secrets.DB_NAME }}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true\" -e SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USER }} -e SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }} '${ECR_REGISTRY}'/'${ECR_REPO}':latest",
+              "docker run -d --name backend-ms1 --network ventas-net -p 8081:8080 -e SPRING_DATASOURCE_URL=\"jdbc:mysql://mysql-db:3306/${{ secrets.DB_NAME }}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true\" -e SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USER }} -e SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }} '${REGISTRY}'/'${REPO}':latest",
               "docker image prune -f"
             ]}' \
             --output text
