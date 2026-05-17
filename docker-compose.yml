@@ -4,7 +4,7 @@ services:
   mysql-db:
     image: mysql:8.0
     container_name: mysql-db
-    restart: unless-stopped
+    restart: always
     environment:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
@@ -23,7 +23,7 @@ services:
   backend-ventas:
     image: ${REGISTRY}/${REPO}:latest
     container_name: backend-ventas
-    restart: unless-stopped
+    restart: always
     depends_on:
       mysql-db:
         condition: service_healthy
