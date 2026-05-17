@@ -21,7 +21,7 @@ jobs:
 
       - name: Login en Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v3
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build imagen Backend y push a ECR
         env:
