@@ -12,7 +12,7 @@ Lógica de negocio y persistencia para el módulo de Ventas (Spring Boot + MySQL
 
 ## 3. Pipeline CI/CD
 Flujo automatizado hacia **Amazon ECR** y despliegue mediante agentes **SSM**. Gestión de credenciales mediante GitHub Secrets.
-### Es necesario definir las siguientes variables con secretos en el repositorio para el funcionamiento del pipeline:
+### Es necesario definir las siguientes variables como secretos en el repositorio para el funcionamiento del pipeline:
 #### Las 4 siguientes se obtienes desde aws
 * `AWS_ACCESS_KEY_ID`
 * `AWS_SECRET_ACCESS_KEY`
