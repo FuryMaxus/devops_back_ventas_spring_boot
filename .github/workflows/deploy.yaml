@@ -57,17 +57,18 @@ jobs:
               \"echo 3. Reconstruyendo docker-compose.yml en EC2...\",
               \"echo $COMPOSE_B64 | base64 -d > docker-compose.yml\",
               
-              \"echo 4. Exportando variables de entorno...\",
-              \"export REGISTRY=$REGISTRY\",
-              \"export REPO=$REPO\",
-              \"export DB_NAME=${{ secrets.DB_NAME }}\",
-              \"export DB_USER=${{ secrets.DB_USER }}\",
-              \"export DB_PASSWORD=${{ secrets.DB_PASSWORD }}\",
+              \"echo 4. Creando archivo .env...\",
+              \"echo REGISTRY=$REGISTRY > .env\",
+              \"echo REPO=$REPO >> .env\",
+              \"echo DB_NAME=${{ secrets.DB_NAME }} >> .env\",
+              \"echo DB_USER=${{ secrets.DB_USER }} >> .env\",
+              \"echo DB_PASSWORD=${{ secrets.DB_PASSWORD }} >> .env\",
+              \"echo HOST_PORT=${{ vars.HOST_PORT || '8081' }} >> .env\",
               
               \"echo 5. Desplegando Orquestación...\",
               \"docker compose pull\",
               \"docker compose down\",
-              \"docker compose up -d\",
+              \"docker compose --env-file .env up -d\",
               
               \"echo 6. Limpiando residuos...\",
               \"docker image prune -f\"

@@ -1,6 +1,6 @@
 ### Repositorio: MICROSERVICIO VENTAS
 
-# Microservicio de Ventas 
+# Microservicio de Ventas
 
 ## 1. Descripción
 Lógica de negocio y persistencia para el módulo de Ventas (Spring Boot + MySQL).
@@ -12,13 +12,27 @@ Lógica de negocio y persistencia para el módulo de Ventas (Spring Boot + MySQL
 
 ## 3. Pipeline CI/CD
 Flujo automatizado hacia **Amazon ECR** y despliegue mediante agentes **SSM**. Gestión de credenciales mediante GitHub Secrets.
-
+### Es necesario definir las siguientes variables como secretos en el repositorio para el funcionamiento del pipeline:
+#### Las 4 siguientes se obtienes desde aws
+* `AWS_ACCESS_KEY_ID`
+* `AWS_SECRET_ACCESS_KEY`
+* `AWS_SESSION_TOKEN`
+* `EC2_INSTANCE_ID`
+#### Las 3 siguientes se definen a conveniencia:
+* `DB_NAME`
+* `DB_USER`
+* `DB_PASSWORD`
+* `HOST_PORT` (por defecto 8081)
 ## 4. Ejecución Local
 Cree un archivo `.env` en la raíz con estas variables antes de iniciar:
-* `DB_NAME=ventas_db`
-* `DB_USER=root`
-* `DB_PASSWORD=su_password`
-* `REGISTRY=local`
+#### Las 3 siguientes son obligatorias
+* `DB_NAME`
+* `DB_USER`
+* `DB_PASSWORD`
+#### Las 2 siguientes son opcionales, si no se ingresa valor se usara uno por defecto:
+* `REGISTRY`
+* `REPO`
+* `HOST_PORT` (por defecto 8081)
 
 Inicie el stack con:
 ```bash
