@@ -1,4 +1,4 @@
-name: CI/CD Microservicio Backend
+name: CI/CD Microservicio Backend (Ventas)
 
 on:
   push:
@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout código
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configurar credenciales AWS
         uses: aws-actions/configure-aws-credentials@v4
@@ -33,29 +33,43 @@ jobs:
           docker tag backend-temp:latest $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
 
-      - name: Desplegar BD y Backend vía SSM
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPO: back_ventas
+      - name: Desplegar BD y Backend con Compose vía SSM
         run: |
+          REGISTRY=${{ steps.login-ecr.outputs.registry }}
+          REPO=back_ventas
+          
+          COMPOSE_B64=$(cat docker-compose.yml | base64 -w 0)
+          
           aws ssm send-command \
             --instance-ids ${{ secrets.EC2_INSTANCE_ID }} \
             --document-name "AWS-RunShellScript" \
-            --comment "Actualizar BD y Backend desde ECR" \
-            --parameters '{"commands":[
-              "set -e",
-              "echo 1. Login en ECR...",
-              "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin '${ECR_REGISTRY}'",
-              "echo 2. Descargando imagen...",
-              "docker pull '${ECR_REGISTRY}'/'${ECR_REPO}':latest",
-              "echo 3. Configurando Red Interna...",
-              "docker network create ventas-net || true",
-              "echo 4. Levantando BD MySQL (si no existe)...",
-              "if [ ! \"$(docker ps -a -q -f name=mysql-db)\" ]; then docker run -d --name mysql-db --network ventas-net -p 3306:3306 -e MYSQL_DATABASE=${{ secrets.DB_NAME }} -e MYSQL_USER=${{ secrets.DB_USER }} -e MYSQL_PASSWORD=${{ secrets.DB_PASSWORD }} -e MYSQL_ROOT_PASSWORD=${{ secrets.DB_PASSWORD }} -v mysql_data_prod:/var/lib/mysql mysql:8.0; fi",
-              "echo 5. Actualizando Backend...",
-              "docker stop backend-ms1 || true",
-              "docker rm backend-ms1 || true",
-              "docker run -d --name backend-ms1 --network ventas-net -p 8081:8081 -e SPRING_DATASOURCE_URL=\"jdbc:mysql://mysql-db:3306/${{ secrets.DB_NAME }}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true\" -e SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USER }} -e SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }} '${ECR_REGISTRY}'/'${ECR_REPO}':latest",
-              "docker image prune -f"
-            ]}' \
+            --comment "Despliegue Infraestructura como Código (Docker Compose)" \
+            --parameters "{\"commands\":[
+              \"set -e\",
+              
+              \"echo 1. Creando directorio de trabajo...\",
+              \"mkdir -p /home/ssm-user/app-ventas\",
+              \"cd /home/ssm-user/app-ventas\",
+              
+              \"echo 2. Autenticando en ECR...\",
+              \"aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $REGISTRY\",
+              
+              \"echo 3. Reconstruyendo docker-compose.yml en EC2...\",
+              \"echo $COMPOSE_B64 | base64 -d > docker-compose.yml\",
+              
+              \"echo 4. Exportando variables de entorno...\",
+              \"export REGISTRY=$REGISTRY\",
+              \"export REPO=$REPO\",
+              \"export DB_NAME=${{ secrets.DB_NAME }}\",
+              \"export DB_USER=${{ secrets.DB_USER }}\",
+              \"export DB_PASSWORD=${{ secrets.DB_PASSWORD }}\",
+              
+              \"echo 5. Desplegando Orquestación...\",
+              \"docker compose pull\",
+              \"docker compose down\",
+              \"docker compose up -d\",
+              
+              \"echo 6. Limpiando residuos...\",
+              \"docker image prune -f\"
+            ]}" \
             --output text
