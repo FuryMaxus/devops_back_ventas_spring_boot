@@ -1,7 +1,7 @@
 services:
   mysql-db:
     image: mysql:8.0
-    container_name: mysql-db
+    container_name: mysql-db2
     restart: always
     environment:
       MYSQL_DATABASE: ${DB_NAME}
@@ -22,7 +22,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ${REGISTRY:-local}/${REPO:-backend-despacho}:latest
+    image: ${REGISTRY:-local}/${REPO:-back_ventas}:latest
     container_name: backend-ventas
     restart: always
     depends_on:
