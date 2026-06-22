@@ -1,11 +1,11 @@
-name: CI/CD Microservicio Backend (Ventas)
+name: CI/CD Backend Ventas a ECR
 
 on:
   push:
     branches: [ "deploy" ]
 
 jobs:
-  build-push-deploy:
+  build-push:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout código
@@ -17,7 +17,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: us-east-1
 
       - name: Login en Amazon ECR
         id: login-ecr
@@ -26,51 +26,9 @@ jobs:
       - name: Build imagen Backend y push a ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPO: back_ventas
+          ECR_REPO: innovatech-backend-ventas
           IMAGE_TAG: latest
         run: |
-          docker build -t backend-temp .
-          docker tag backend-temp:latest $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
+          docker build -t backend-ventas-temp .
+          docker tag backend-ventas-temp:latest $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
-
-      - name: Desplegar BD y Backend con Compose vía SSM
-        run: |
-          REGISTRY=${{ steps.login-ecr.outputs.registry }}
-          REPO=back_ventas
-          
-          COMPOSE_B64=$(cat docker-compose.yml | base64 -w 0)
-          
-          aws ssm send-command \
-            --instance-ids ${{ secrets.EC2_INSTANCE_ID }} \
-            --document-name "AWS-RunShellScript" \
-            --comment "Despliegue Infraestructura como Código (Docker Compose)" \
-            --parameters "{\"commands\":[
-              \"set -e\",
-              
-              \"echo 1. Creando directorio de trabajo...\",
-              \"mkdir -p /home/ssm-user/app-ventas\",
-              \"cd /home/ssm-user/app-ventas\",
-              
-              \"echo 2. Autenticando en ECR...\",
-              \"aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $REGISTRY\",
-              
-              \"echo 3. Reconstruyendo docker-compose.yml en EC2...\",
-              \"echo $COMPOSE_B64 | base64 -d > docker-compose.yml\",
-              
-              \"echo 4. Creando archivo .env...\",
-              \"echo REGISTRY=$REGISTRY > .env\",
-              \"echo REPO=$REPO >> .env\",
-              \"echo DB_NAME=${{ secrets.DB_NAME }} >> .env\",
-              \"echo DB_USER=${{ secrets.DB_USER }} >> .env\",
-              \"echo DB_PASSWORD=${{ secrets.DB_PASSWORD }} >> .env\",
-              \"echo HOST_PORT=${{ vars.HOST_PORT || '8081' }} >> .env\",
-              
-              \"echo 5. Desplegando Orquestación...\",
-              \"docker compose pull\",
-              \"docker compose down\",
-              \"docker compose --env-file .env up -d\",
-              
-              \"echo 6. Limpiando residuos...\",
-              \"docker image prune -f\"
-            ]}" \
-            --output text
