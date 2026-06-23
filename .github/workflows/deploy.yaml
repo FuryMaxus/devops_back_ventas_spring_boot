@@ -32,3 +32,15 @@ jobs:
           docker build -t backend-ventas-temp .
           docker tag backend-ventas-temp:latest $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
+
+      - name: Conectar con el Clúster EKS
+        run: |
+          aws eks update-kubeconfig --region us-east-1 --name innovatech-cluster
+
+      - name: Aplicar Cambios en Kubernetes
+        run: |
+          kubectl apply -f k8s/backend-ventas.yaml
+
+      - name: Forzar Descarga de Imagen Nueva (Rollout)
+        run: |
+          kubectl rollout restart deployment/backend-ventas-app
