@@ -43,4 +43,4 @@ jobs:
 
       - name: Forzar Descarga de Imagen Nueva (Rollout)
         run: |
-          kubectl rollout restart deployment/backend-ventas-app
+          kubectl rollout restart deployment/backend-ventas
