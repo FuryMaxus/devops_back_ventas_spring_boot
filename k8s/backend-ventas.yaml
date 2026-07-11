@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: backend-ventas
-        image: 427376198856.dkr.ecr.us-east-1.amazonaws.com/innovatech-backend-ventas:latest
+        image: 247695027703.dkr.ecr.us-east-1.amazonaws.com/innovatech-backend-ventas:latest
         ports:
         - containerPort: 8080
         resources:
@@ -24,13 +24,13 @@ spec:
               cpu: "250m"
         env:
         - name: DB_ENDPOINT
-          value: "10.0.138.1"
+          value: "172.31.9.188"
         - name: DB_PORT
           value: "3306"
         - name: DB_NAME
-          value: "ventas_db"
+          value: "db_ventas"
         - name: DB_USERNAME
-          value: "db_user"
+          value: "admin_db"
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
